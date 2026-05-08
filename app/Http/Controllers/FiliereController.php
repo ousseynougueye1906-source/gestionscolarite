@@ -1,51 +1,54 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Filiere;
-use Illuminate\Http\Request;
+use App\Services\FiliereService;
+use App\Http\Requests\StoreFiliereRequest;
+use App\Http\Requests\UpdateFiliereRequest;
 
 class FiliereController extends Controller
 {
+    private $service;
+
+    public function __construct(FiliereService $service)
+    {
+        $this->service = $service;
+    }
+
     public function create()
     {
         $filieres = Filiere::all();
         return view('filiere.create', compact('filieres'));
     }
 
-    public function store(Request $request)
+    public function store(StoreFiliereRequest $request)
     {
-        $request->validate([
-            'code' => 'required',
-            'nom_filiere' => 'required'
-        ]);
+        $this->service->create($request->validated());
 
-        Filiere::create($request->all());
-
-        return redirect()->back()->with('success', 'Filière ajoutée');
+        return back()->with('success', 'Filière ajoutée');
     }
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'code' => 'required',
-            'nom_filiere' => 'required'
-        ]);
 
-        $filiere = Filiere::findOrFail($id);
-        $filiere->update($request->all());
-
-        return redirect('/filiere/create')->with('success', 'Filière modifiée avec succès');
-    }
     public function edit($id)
     {
         $filiere = Filiere::findOrFail($id);
         return view('filiere.edit', compact('filiere'));
     }
 
+    public function update(UpdateFiliereRequest $request, $id)
+    {
+        $filiere = Filiere::findOrFail($id);
+
+        $this->service->update($filiere, $request->validated());
+
+        return redirect('/filiere/create')->with('success', 'Filière modifiée');
+    }
+
     public function destroy($id)
     {
         $filiere = Filiere::findOrFail($id);
-        $filiere->delete();
-        return redirect('/filiere/create')->with('success', 'Filière supprimée avec succès');
+
+        $this->service->delete($filiere);
+
+        return redirect('/filiere/create')->with('success', 'Filière supprimée');
     }
 }

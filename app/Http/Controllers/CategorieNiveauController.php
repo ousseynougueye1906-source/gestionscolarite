@@ -1,48 +1,54 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\CategorieNiveau;
-use Illuminate\Http\Request;
+use App\Services\CategorieNiveauService;
+use App\Http\Requests\StoreCategorieNiveauRequest;
+use App\Http\Requests\UpdateCategorieNiveauRequest;
 
 class CategorieNiveauController extends Controller
 {
+    private $service;
+
+    public function __construct(CategorieNiveauService $service)
+    {
+        $this->service = $service;
+    }
+
     public function create()
     {
         $categories = CategorieNiveau::all();
         return view('categorie_niveau.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(StoreCategorieNiveauRequest $request)
     {
-        $request->validate([
-            'nom_categorieNiveau' => 'required'
-        ]);
+        $this->service->create($request->validated());
 
-        CategorieNiveau::create($request->all());
-
-        return redirect()->back()->with('success', 'Catégorie ajoutée');
+        return back()->with('success', 'Catégorie ajoutée');
     }
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'nom_categorieNiveau' => 'required',
-        ]);
 
-        $categorie = CategorieNiveau::findOrFail($id);
-        $categorie->update($request->all());
-
-        return redirect('/categorie-niveau/create')->with('success', 'Catégorie modifiée avec succès');
-    }
     public function edit($id)
-{
-    $categorie = CategorieNiveau::findOrFail($id);
-    return view('categorie-niveau.edit', compact('categorie'));
-}
+    {
+        $categorie = CategorieNiveau::findOrFail($id);
+        return view('categorie_niveau.edit', compact('categorie'));
+    }
+
+    public function update(UpdateCategorieNiveauRequest $request, $id)
+    {
+        $categorie = CategorieNiveau::findOrFail($id);
+
+        $this->service->update($categorie, $request->validated());
+
+        return redirect('/categorie-niveau/create')->with('success', 'Catégorie modifiée');
+    }
+
     public function destroy($id)
     {
         $categorie = CategorieNiveau::findOrFail($id);
-        $categorie->delete();
-        return redirect('/categorie-niveau/create')->with('success', 'Catégorie supprimée avec succès');
+
+        $this->service->delete($categorie);
+
+        return redirect('/categorie-niveau/create')->with('success', 'Catégorie supprimée');
     }
 }

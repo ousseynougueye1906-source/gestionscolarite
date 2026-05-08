@@ -3,26 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classe;
-use Illuminate\Http\Request;
+use App\Services\ClasseService;
+use App\Http\Requests\StoreClasseRequest;
+use App\Http\Requests\UpdateClasseRequest;
 
 class ClasseController extends Controller
 {
+    private $service;
+
+    public function __construct(ClasseService $service)
+    {
+        $this->service = $service;
+    }
+
     public function create()
     {
         $classes = Classe::all();
         return view('classe.create', compact('classes'));
     }
 
-    public function store(Request $request)
+    public function store(StoreClasseRequest $request)
     {
-        $request->validate([
-            'code_classe' => 'required|unique:classe,code_classe',
-            'nom_classe' => 'required',
-        ]);
+        $this->service->create($request->validated());
 
-        Classe::create($request->all());
-
-        return redirect()->back()->with('success', 'Classe ajoutée avec succès');
+        return back()->with('success', 'Classe ajoutée');
     }
 
     public function edit($id)
@@ -31,23 +35,21 @@ class ClasseController extends Controller
         return view('classe.edit', compact('classe'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateClasseRequest $request, $id)
     {
-        $request->validate([
-            'code_classe' => 'required|unique:classe,code_classe,' . $id,
-            'nom_classe' => 'required',
-        ]);
-
         $classe = Classe::findOrFail($id);
-        $classe->update($request->all());
 
-        return redirect('/classe/create')->with('success', 'Classe modifiée avec succès');
+        $this->service->update($classe, $request->validated());
+
+        return redirect('/classe/create')->with('success', 'Classe modifiée');
     }
 
     public function destroy($id)
     {
         $classe = Classe::findOrFail($id);
-        $classe->delete();
-        return redirect('/classe/create')->with('success', 'Classe supprimée avec succès');
+
+        $this->service->delete($classe);
+
+        return redirect('/classe/create')->with('success', 'Classe supprimée');
     }
 }

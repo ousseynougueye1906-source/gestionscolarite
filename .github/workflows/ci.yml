@@ -1,0 +1,55 @@
+name: Laravel CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: 📥 Cloner le repo
+        uses: actions/checkout@v3
+
+      - name: 🐘 Installer PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: 📦 Installer dépendances
+        run: composer install --no-progress --prefer-dist
+
+      - name: ⚙️ Configurer .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: 🧱 Configurer base de données
+        run: |
+          php artisan migrate
+
+      - name: 🧪 Lancer les tests
+        run: php artisan test
+    deploy:
+        needs: test
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: 🚀 Déployer
+            run: echo "Déploiement ici"
